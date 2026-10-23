@@ -114,7 +114,7 @@
 <div class="container">
 
   <header>
-    <h1>📊 Sistem Data Absensi Anak</h1>
+    <h1>📊 Sistem Data Absensi</h1>
     <p>Posyandu Puspomekar</p>
   </header>
 
@@ -237,7 +237,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyc5nPssxgkfQKLxJEeGItdE1bZuTEV7e7QXn7WFuUvwq7VwreVsUI2iDoMjr3cM3Ou/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxJWdl4jwlCx-IRy-DezCrWD1xAfRh5kteGQatG_oLm6_fo4l2zk8A1kzrjRU9HGOCH/exec';
 
 let currentPage = 1;
 let deleteTargetId = null;
@@ -342,7 +342,7 @@ document.getElementById('entryForm').addEventListener('submit', async function(e
       document.getElementById('absenSelect').value = '';
       showToast('✅ ' + res.msg);
       showPage('data');
-      loadListAnak(); // refresh dropdown biar anak baru muncul
+      loadListAnak();
     } else {
       showToast('⚠️ ' + res.msg);
     }
@@ -464,7 +464,6 @@ async function downloadPNG() {
   const header = document.getElementById('exportHeader');
   const meta = document.getElementById('exportMeta');
 
-  // Isi meta
   meta.textContent = `Filter Periode: ${lastFilterPeriode ? formatPeriode(lastFilterPeriode) : 'Semua'} • Diunduh: ${new Date().toLocaleString('id-ID')}`;
   header.style.display = 'block';
 
@@ -500,11 +499,9 @@ async function downloadPDF() {
     const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 10;
 
-    // Hitung skala agar muat lebar
     const imgWidth = pageWidth - margin * 2;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // Jika lebih tinggi dari halaman, potong per halaman
     let heightLeft = imgHeight;
     let position = margin;
 
@@ -533,33 +530,66 @@ function esc(s) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
+
+/**
+ * Parse apapun ke Date:
+ *  - "2025-05-08"
+ *  - "2025-05-08T00:00:00.000Z"
+ *  - "Thu May 08 2025 00:00:00 GMT+0700 (Waktu Indonesia Barat)"
+ *  - Date object
+ */
+function parseAnyDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v) ? null : v;
+
+  const s = String(v).trim();
+
+  // yyyy-MM-dd saja → anggap lokal (jangan di-shift timezone)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  // yyyy-MM-ddTHH:mm... (ISO)
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  }
+  // String Date.toString()
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
 // Format: DD/MM/YYYY
-function formatDate(iso) {
-  if (!iso) return '-';
-  const d = new Date(iso + 'T00:00:00');
-  if (isNaN(d)) return iso;
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+function formatDate(v) {
+  const d = parseAnyDate(v);
+  if (!d) return '-';
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
-function formatDateTime(iso) {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+
+// Format: DD/MM/YYYY HH:mm
+function formatDateTime(v) {
+  const d = parseAnyDate(v);
+  if (!d) return '-';
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
-// Format: Bulan, Tahun
-function formatPeriode(p) {
-  if (!p) return '-';
-  const [y, m] = p.split('-');
+
+// Format: Bulan, Tahun — terima "yyyy-MM", ISO, Date.toString()
+function formatPeriode(v) {
+  if (!v) return '-';
   const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  return `${bulan[parseInt(m, 10) - 1]}, ${y}`;
+  const s = String(v).trim();
+
+  // "yyyy-MM"
+  if (/^\d{4}-\d{2}$/.test(s)) {
+    const [y, m] = s.split('-').map(Number);
+    if (m >= 1 && m <= 12) return `${bulan[m - 1]}, ${y}`;
+  }
+  // "yyyy-MM-dd" atau ISO/Date string → parse
+  const d = parseAnyDate(v);
+  if (!d) return s;
+  return `${bulan[d.getMonth()]}, ${d.getFullYear()}`;
 }
 
 /* ============ INIT ============ */
