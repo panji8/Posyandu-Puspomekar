@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Absensi Posyandu - Puspomekar</title>
+<title>Posyandu - Data Anak</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1e293b; padding: 16px; }
@@ -37,8 +37,9 @@
     font-size: 14px; outline: none; transition: border .2s; background: #fff;
   }
   .field input:focus, .field select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .field input[readonly] { background: #f1f5f9; color: #475569; }
 
-  .actions { display: flex; gap: 10px; margin-top: 24px; }
+  .actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
   .btn { padding: 11px 22px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
   .btn-primary { background: #2563eb; color: #fff; }
   .btn-primary:hover { background: #1d4ed8; }
@@ -47,12 +48,31 @@
   .btn-ghost:hover { background: #cbd5e1; }
   .btn-danger { background: #ef4444; color: #fff; }
   .btn-danger:hover { background: #dc2626; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover { background: #059669; }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* Absensi Cepat */
+  .absen-box {
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+    border: 1px dashed #93c5fd;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .absen-box .hint { font-size: 12px; color: #1e40af; margin-top: 6px; }
+
+  /* Tabel & filter */
+  .toolbar {
+    display: flex; gap: 10px; align-items: end; flex-wrap: wrap;
+    padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0;
+  }
+  .toolbar .field { min-width: 180px; }
 
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; padding: 10px 8px; background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
-  td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; white-space: nowrap; }
   tr:hover td { background: #f8fafc; }
   .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
   .badge-l { background: #dbeafe; color: #1e40af; }
@@ -85,14 +105,17 @@
     box-shadow: 0 10px 30px rgba(0,0,0,.25);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Untuk export: sembunyikan elemen non-print */
+  .export-hide { display: none !important; }
 </style>
 </head>
 <body>
 <div class="container">
 
   <header>
-    <h1>📊 Sistem Absensi Posyandu Puspomekar</h1>
-    <p>Data Anak</p>
+    <h1>📊 Sistem Data Absensi Anak</h1>
+    <p>Posyandu Puspomekar</p>
   </header>
 
   <nav class="menu">
@@ -100,23 +123,40 @@
     <button id="menuData" onclick="showPage('data')">📋 Data Hasil Input</button>
   </nav>
 
+  <!-- ============ PAGE 1: FORM ============ -->
   <section id="pageForm" class="card">
     <h2>Formulir Input Data</h2>
+
+    <!-- ABSENSI CEPAT -->
+    <div class="absen-box">
+      <div class="section-title" style="margin-top:0">⚡ Absensi Cepat</div>
+      <div class="grid">
+        <div class="field">
+          <label>Pilih Anak (berdasarkan nama)</label>
+          <select id="absenSelect" onchange="onAbsenChange()">
+            <option value="">-- Pilih anak --</option>
+          </select>
+          <div class="hint">Identitas akan terisi otomatis. Tinggal isi Data Pengukuran.</div>
+        </div>
+      </div>
+    </div>
+
     <form id="entryForm">
       <div class="section-title">Identitas Anak & Orang Tua</div>
       <div class="grid">
-        <div class="field"><label>NIK</label><input type="text" name="nik" required maxlength="16" pattern="\d{16}" placeholder="16 digit angka"></div>
-        <div class="field"><label>Nama Anak</label><input type="text" name="namaAnak" required maxlength="60" placeholder="Nama lengkap anak"></div>
-        <div class="field"><label>Tanggal Lahir Anak</label><input type="date" name="tglLahir" required></div>
+        <div class="field"><label>NIK</label><input type="text" name="nik" id="inNik" required maxlength="16" pattern="\d{16}" placeholder="16 digit angka"></div>
+        <div class="field"><label>Nama Anak</label><input type="text" name="namaAnak" id="inNama" required maxlength="60"></div>
+        <div class="field"><label>Tanggal Lahir Anak</label><input type="date" name="tglLahir" id="inTglLahir" required></div>
         <div class="field"><label>Jenis Kelamin</label>
-          <select name="jk" required>
+          <select name="jk" id="inJk" required>
             <option value="">-- Pilih --</option>
             <option value="L">Laki-laki (L)</option>
             <option value="P">Perempuan (P)</option>
           </select>
         </div>
-        <div class="field"><label>Nama Orang Tua</label><input type="text" name="namaOrtu" required maxlength="60"></div>
+        <div class="field"><label>Nama Orang Tua</label><input type="text" name="namaOrtu" id="inOrtu" required maxlength="60"></div>
       </div>
+
       <div class="section-title">Data Pengukuran</div>
       <div class="grid">
         <div class="field"><label>Tanggal Ukur</label><input type="date" name="tglUkur" required></div>
@@ -126,29 +166,51 @@
         <div class="field"><label>LiLA (cm)</label><input type="number" name="lila" step="0.1" min="0" required></div>
         <div class="field"><label>Lingkar Kepala (cm)</label><input type="number" name="lingkarKepala" step="0.1" min="0" required></div>
       </div>
+
       <div class="actions">
         <button type="submit" class="btn btn-primary" id="submitBtn">💾 Simpan Data</button>
-        <button type="button" class="btn btn-ghost" onclick="document.getElementById('entryForm').reset()">↺ Reset</button>
+        <button type="button" class="btn btn-ghost" onclick="resetForm()">↺ Reset</button>
       </div>
     </form>
   </section>
 
+  <!-- ============ PAGE 2: DATA ============ -->
   <section id="pageData" class="card hidden">
     <h2>Data Hasil Input</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>No</th><th>Tgl Input</th><th>NIK</th><th>Nama Anak</th><th>Tgl Lahir</th>
-            <th>JK</th><th>Orang Tua</th><th>Tgl Ukur</th><th>Periode</th>
-            <th>BB</th><th>TB</th><th>LiLA</th><th>LK</th><th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+
+    <div class="toolbar">
+      <div class="field">
+        <label>Filter Periode</label>
+        <input type="month" id="filterPeriode" onchange="applyFilter()">
+      </div>
+      <button class="btn btn-ghost" onclick="resetFilter()">Reset Filter</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-success" onclick="downloadPNG()">🖼️ PNG</button>
+      <button class="btn btn-danger" onclick="downloadPDF()">📄 PDF</button>
     </div>
-    <div id="emptyState" class="empty hidden">Belum ada data. Silakan input melalui menu Form.</div>
-    <div class="pagination" id="pagination">
+
+    <div id="exportArea">
+      <div id="exportHeader" style="display:none; margin-bottom:12px;">
+        <h3 style="font-size:16px; margin-bottom:4px;">Data Hasil Input — Posyandu</h3>
+        <p id="exportMeta" style="font-size:12px; color:#64748b;"></p>
+      </div>
+
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>No</th><th>Tgl Input</th><th>NIK</th><th>Nama Anak</th><th>Tgl Lahir</th>
+              <th>JK</th><th>Orang Tua</th><th>Tgl Ukur</th><th>Periode</th>
+              <th>BB</th><th>TB</th><th>LiLA</th><th>LK</th><th class="export-hide">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty hidden">Belum ada data. Silakan input melalui menu Form.</div>
+    </div>
+
+    <div class="pagination export-hide" id="pagination">
       <span class="info" id="pageInfo"></span>
       <div class="pages" id="pageButtons"></div>
     </div>
@@ -156,6 +218,7 @@
 
 </div>
 
+<!-- MODAL HAPUS -->
 <div class="modal-overlay hidden" id="deleteModal">
   <div class="modal">
     <h3>Hapus Data?</h3>
@@ -169,18 +232,20 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- CDN untuk export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-/* =========================================================
-   GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT KAMU
-========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycby1ziaEa1mOhgioRgMnqfNPLHJ_OkYhjd6vHNuNPGuYEOG5RYFVNQBset6g4SFr8iCf/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyc5nPssxgkfQKLxJEeGItdE1bZuTEV7e7QXn7WFuUvwq7VwreVsUI2iDoMjr3cM3Ou/exec';
 
 let currentPage = 1;
 let deleteTargetId = null;
+let listAnakCache = [];
+let lastFilterPeriode = '';
 
-/* ===== Helper fetch ke Apps Script ===== */
+/* ============ API ============ */
 async function apiCall(action, payload = {}) {
-  // Content-Type text/plain untuk hindari preflight OPTIONS (CORS)
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -190,7 +255,7 @@ async function apiCall(action, payload = {}) {
   return res.json();
 }
 
-/* ===== Nav ===== */
+/* ============ NAV ============ */
 function showPage(page) {
   const isForm = page === 'form';
   document.getElementById('pageForm').classList.toggle('hidden', !isForm);
@@ -208,12 +273,52 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-/* ===== Submit form ===== */
+/* ============ ABSENSI CEPAT ============ */
+async function loadListAnak() {
+  const sel = document.getElementById('absenSelect');
+  sel.innerHTML = '<option value="">Memuat...</option>';
+  try {
+    const res = await apiCall('listAnak');
+    listAnakCache = res.anak || [];
+    if (!listAnakCache.length) {
+      sel.innerHTML = '<option value="">(Belum ada data anak. Input manual di bawah.)</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">-- Pilih anak --</option>' +
+      listAnakCache.map(a => `<option value="${a.nik}">${esc(a.namaAnak)} — ${esc(a.namaOrtu)}</option>`).join('');
+  } catch (err) {
+    sel.innerHTML = '<option value="">Gagal memuat: ' + err.message + '</option>';
+  }
+}
+
+function onAbsenChange() {
+  const nik = document.getElementById('absenSelect').value;
+  if (!nik) return;
+  const a = listAnakCache.find(x => x.nik === nik);
+  if (!a) return;
+
+  document.getElementById('inNik').value = a.nik;
+  document.getElementById('inNama').value = a.namaAnak;
+  document.getElementById('inTglLahir').value = a.tglLahir;
+  document.getElementById('inJk').value = a.jk;
+  document.getElementById('inOrtu').value = a.namaOrtu;
+
+  // Fokus ke field pengukuran
+  const form = document.getElementById('entryForm');
+  form.querySelector('[name="tglUkur"]').focus();
+  showToast('⚡ Identitas terisi otomatis');
+}
+
+function resetForm() {
+  document.getElementById('entryForm').reset();
+  document.getElementById('absenSelect').value = '';
+}
+
+/* ============ SUBMIT ============ */
 document.getElementById('entryForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Menyimpan...';
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
 
   const fd = new FormData(this);
   const data = {
@@ -234,25 +339,37 @@ document.getElementById('entryForm').addEventListener('submit', async function(e
     const res = await apiCall('simpan', { data });
     if (res.ok) {
       this.reset();
+      document.getElementById('absenSelect').value = '';
       showToast('✅ ' + res.msg);
       showPage('data');
+      loadListAnak(); // refresh dropdown biar anak baru muncul
     } else {
       showToast('⚠️ ' + res.msg);
     }
   } catch (err) {
     showToast('❌ Gagal: ' + err.message);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '💾 Simpan Data';
+    btn.disabled = false; btn.textContent = '💾 Simpan Data';
   }
 });
 
-/* ===== Load tabel ===== */
+/* ============ FILTER ============ */
+function applyFilter() {
+  lastFilterPeriode = document.getElementById('filterPeriode').value;
+  currentPage = 1;
+  loadTable();
+}
+function resetFilter() {
+  document.getElementById('filterPeriode').value = '';
+  applyFilter();
+}
+
+/* ============ LOAD TABLE ============ */
 async function loadTable() {
   document.getElementById('tableBody').innerHTML =
     '<tr><td colspan="14" style="text-align:center;padding:30px;color:#94a3b8">Memuat data...</td></tr>';
   try {
-    const res = await apiCall('list', { page: currentPage });
+    const res = await apiCall('list', { page: currentPage, periode: lastFilterPeriode });
     renderTable(res);
   } catch (err) {
     document.getElementById('tableBody').innerHTML =
@@ -278,7 +395,7 @@ function renderTable(res) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${(res.page - 1) * 10 + i + 1}</td>
-      <td style="white-space:nowrap">${formatDateTime(d.inputAt)}</td>
+      <td>${formatDateTime(d.inputAt)}</td>
       <td>${esc(d.nik)}</td>
       <td><strong>${esc(d.namaAnak)}</strong></td>
       <td>${formatDate(d.tglLahir)}</td>
@@ -287,7 +404,7 @@ function renderTable(res) {
       <td>${formatDate(d.tglUkur)}</td>
       <td>${formatPeriode(d.periode)}</td>
       <td>${d.berat}</td><td>${d.tinggi}</td><td>${d.lila}</td><td>${d.lingkarKepala}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="askDelete('${d.id}')">Hapus</button></td>
+      <td class="export-hide"><button class="btn btn-danger btn-sm" onclick="askDelete('${d.id}')">Hapus</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -298,7 +415,6 @@ function renderTable(res) {
 
   const container = document.getElementById('pageButtons');
   container.innerHTML = '';
-
   const makeBtn = (label, page, disabled, active) => {
     const b = document.createElement('button');
     b.textContent = label;
@@ -307,12 +423,10 @@ function renderTable(res) {
     if (!disabled && !active) b.onclick = () => { currentPage = page; loadTable(); };
     container.appendChild(b);
   };
-
   makeBtn('‹', res.page - 1, res.page === 1, false);
   let startPage = Math.max(1, res.page - 2);
   let endPage = Math.min(res.totalPages, startPage + 4);
   if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
   if (startPage > 1) {
     makeBtn('1', 1, false, res.page === 1);
     if (startPage > 2) container.appendChild(document.createTextNode('…'));
@@ -325,15 +439,9 @@ function renderTable(res) {
   makeBtn('›', res.page + 1, res.page === res.totalPages, false);
 }
 
-/* ===== Hapus ===== */
-function askDelete(id) {
-  deleteTargetId = id;
-  document.getElementById('deleteModal').classList.remove('hidden');
-}
-function closeDeleteModal() {
-  deleteTargetId = null;
-  document.getElementById('deleteModal').classList.add('hidden');
-}
+/* ============ HAPUS ============ */
+function askDelete(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.remove('hidden'); }
+function closeDeleteModal() { deleteTargetId = null; document.getElementById('deleteModal').classList.add('hidden'); }
 document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
   if (!deleteTargetId) return;
   const btn = this;
@@ -350,30 +458,112 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async func
   }
 });
 
-/* ===== Util ===== */
+/* ============ EXPORT ============ */
+async function downloadPNG() {
+  const area = document.getElementById('exportArea');
+  const header = document.getElementById('exportHeader');
+  const meta = document.getElementById('exportMeta');
+
+  // Isi meta
+  meta.textContent = `Filter Periode: ${lastFilterPeriode ? formatPeriode(lastFilterPeriode) : 'Semua'} • Diunduh: ${new Date().toLocaleString('id-ID')}`;
+  header.style.display = 'block';
+
+  try {
+    const canvas = await html2canvas(area, { backgroundColor: '#ffffff', scale: 2 });
+    const link = document.createElement('a');
+    link.download = 'data-posyandu-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('🖼️ PNG berhasil diunduh');
+  } catch (err) {
+    showToast('❌ Gagal export: ' + err.message);
+  } finally {
+    header.style.display = 'none';
+  }
+}
+
+async function downloadPDF() {
+  const area = document.getElementById('exportArea');
+  const header = document.getElementById('exportHeader');
+  const meta = document.getElementById('exportMeta');
+
+  meta.textContent = `Filter Periode: ${lastFilterPeriode ? formatPeriode(lastFilterPeriode) : 'Semua'} • Diunduh: ${new Date().toLocaleString('id-ID')}`;
+  header.style.display = 'block';
+
+  try {
+    const canvas = await html2canvas(area, { backgroundColor: '#ffffff', scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('landscape', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+
+    // Hitung skala agar muat lebar
+    const imgWidth = pageWidth - margin * 2;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // Jika lebih tinggi dari halaman, potong per halaman
+    let heightLeft = imgHeight;
+    let position = margin;
+
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+    heightLeft -= (pageHeight - margin * 2);
+
+    while (heightLeft > 0) {
+      position = margin - (imgHeight - heightLeft);
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - margin * 2);
+    }
+
+    pdf.save('data-posyandu-' + Date.now() + '.pdf');
+    showToast('📄 PDF berhasil diunduh');
+  } catch (err) {
+    showToast('❌ Gagal export: ' + err.message);
+  } finally {
+    header.style.display = 'none';
+  }
+}
+
+/* ============ UTIL ============ */
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
+// Format: DD/MM/YYYY
 function formatDate(iso) {
   if (!iso) return '-';
   const d = new Date(iso + 'T00:00:00');
   if (isNaN(d)) return iso;
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
 function formatDateTime(iso) {
   if (!iso) return '-';
   const d = new Date(iso);
   if (isNaN(d)) return iso;
-  return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
 }
+// Format: Bulan, Tahun
 function formatPeriode(p) {
   if (!p) return '-';
   const [y, m] = p.split('-');
-  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  return `${bulan[parseInt(m, 10) - 1]} ${y}`;
+  const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  return `${bulan[parseInt(m, 10) - 1]}, ${y}`;
 }
+
+/* ============ INIT ============ */
+loadListAnak();
 </script>
 </body>
 </html>
