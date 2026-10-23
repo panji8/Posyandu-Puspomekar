@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Posyandu - Data Anak</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; color: #1e293b; padding: 16px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    color: #fff; padding: 20px 24px; border-radius: 12px; margin-bottom: 16px;
+  }
+  header h1 { font-size: 20px; margin-bottom: 4px; }
+  header p { font-size: 13px; opacity: .85; }
+
+  .menu { display: flex; gap: 8px; margin-bottom: 16px; }
+  .menu button {
+    flex: 1; padding: 12px; border: none; border-radius: 10px;
+    background: #fff; color: #475569; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .menu button.active { background: #2563eb; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.35); }
+
+  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card h2 { font-size: 16px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a; }
+  .section-title { font-size: 13px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 12px; }
+  .section-title:first-of-type { margin-top: 0; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .field { display: flex; flex-direction: column; }
+  .field label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+  .field input, .field select {
+    padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 14px; outline: none; transition: border .2s; background: #fff;
+  }
+  .field input:focus, .field select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+  .actions { display: flex; gap: 10px; margin-top: 24px; }
+  .btn { padding: 11px 22px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { opacity: .6; cursor: wait; }
+  .btn-ghost { background: #e2e8f0; color: #475569; }
+  .btn-ghost:hover { background: #cbd5e1; }
+  .btn-danger { background: #ef4444; color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 8px; background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+  td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .badge-l { background: #dbeafe; color: #1e40af; }
+  .badge-p { background: #fce7f3; color: #9d174d; }
+
+  .empty { text-align: center; padding: 50px 20px; color: #94a3b8; font-size: 14px; }
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+  .pagination .info { font-size: 13px; color: #64748b; }
+  .pagination .pages { display: flex; gap: 6px; }
+  .pagination .pages button {
+    min-width: 34px; height: 34px; border: 1px solid #e2e8f0;
+    background: #fff; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: #475569; transition: all .15s;
+  }
+  .pagination .pages button:hover:not(:disabled) { border-color: #2563eb; color: #2563eb; }
+  .pagination .pages button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .pagination .pages button:disabled { opacity: .4; cursor: not-allowed; }
+
+  .hidden { display: none !important; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.2); }
+  .modal h3 { font-size: 16px; margin-bottom: 10px; }
+  .modal p { font-size: 14px; color: #64748b; margin-bottom: 20px; }
+  .modal .actions { margin-top: 0; justify-content: flex-end; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #0f172a; color: #fff; padding: 12px 24px; border-radius: 10px;
+    font-size: 14px; opacity: 0; transition: all .3s; z-index: 200;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>📊 Sistem Data Anak & Pengukuran</h1>
+    <p>Posyandu — GitHub Pages + Google Sheets</p>
+  </header>
+
+  <nav class="menu">
+    <button id="menuForm" class="active" onclick="showPage('form')">📝 Input Form</button>
+    <button id="menuData" onclick="showPage('data')">📋 Data Hasil Input</button>
+  </nav>
+
+  <section id="pageForm" class="card">
+    <h2>Formulir Input Data</h2>
+    <form id="entryForm">
+      <div class="section-title">Identitas Anak & Orang Tua</div>
+      <div class="grid">
+        <div class="field"><label>NIK</label><input type="text" name="nik" required maxlength="16" pattern="\d{16}" placeholder="16 digit angka"></div>
+        <div class="field"><label>Nama Anak</label><input type="text" name="namaAnak" required maxlength="60" placeholder="Nama lengkap anak"></div>
+        <div class="field"><label>Tanggal Lahir Anak</label><input type="date" name="tglLahir" required></div>
+        <div class="field"><label>Jenis Kelamin</label>
+          <select name="jk" required>
+            <option value="">-- Pilih --</option>
+            <option value="L">Laki-laki (L)</option>
+            <option value="P">Perempuan (P)</option>
+          </select>
+        </div>
+        <div class="field"><label>Nama Orang Tua</label><input type="text" name="namaOrtu" required maxlength="60"></div>
+      </div>
+      <div class="section-title">Data Pengukuran</div>
+      <div class="grid">
+        <div class="field"><label>Tanggal Ukur</label><input type="date" name="tglUkur" required></div>
+        <div class="field"><label>Bulan / Periode</label><input type="month" name="periode" required></div>
+        <div class="field"><label>Berat Badan (kg)</label><input type="number" name="berat" step="0.1" min="0" required></div>
+        <div class="field"><label>Tinggi / Panjang Badan (cm)</label><input type="number" name="tinggi" step="0.1" min="0" required></div>
+        <div class="field"><label>LiLA (cm)</label><input type="number" name="lila" step="0.1" min="0" required></div>
+        <div class="field"><label>Lingkar Kepala (cm)</label><input type="number" name="lingkarKepala" step="0.1" min="0" required></div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="submitBtn">💾 Simpan Data</button>
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('entryForm').reset()">↺ Reset</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="pageData" class="card hidden">
+    <h2>Data Hasil Input</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th><th>Tgl Input</th><th>NIK</th><th>Nama Anak</th><th>Tgl Lahir</th>
+            <th>JK</th><th>Orang Tua</th><th>Tgl Ukur</th><th>Periode</th>
+            <th>BB</th><th>TB</th><th>LiLA</th><th>LK</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty hidden">Belum ada data. Silakan input melalui menu Form.</div>
+    <div class="pagination" id="pagination">
+      <span class="info" id="pageInfo"></span>
+      <div class="pages" id="pageButtons"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-overlay hidden" id="deleteModal">
+  <div class="modal">
+    <h3>Hapus Data?</h3>
+    <p>Data ini akan dihapus permanen dari Google Sheet. Lanjutkan?</p>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Batal</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT KAMU
+========================================================= */
+const API_URL = 'https://script.google.com/macros/s/XXXXXXXXXXXX/exec';
+
+let currentPage = 1;
+let deleteTargetId = null;
+
+/* ===== Helper fetch ke Apps Script ===== */
+async function apiCall(action, payload = {}) {
+  // Content-Type text/plain untuk hindari preflight OPTIONS (CORS)
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, ...payload })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+/* ===== Nav ===== */
+function showPage(page) {
+  const isForm = page === 'form';
+  document.getElementById('pageForm').classList.toggle('hidden', !isForm);
+  document.getElementById('pageData').classList.toggle('hidden', isForm);
+  document.getElementById('menuForm').classList.toggle('active', isForm);
+  document.getElementById('menuData').classList.toggle('active', !isForm);
+  if (!isForm) { currentPage = 1; loadTable(); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ===== Submit form ===== */
+document.getElementById('entryForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyimpan...';
+
+  const fd = new FormData(this);
+  const data = {
+    nik: fd.get('nik').trim(),
+    namaAnak: fd.get('namaAnak').trim(),
+    tglLahir: fd.get('tglLahir'),
+    jk: fd.get('jk'),
+    namaOrtu: fd.get('namaOrtu').trim(),
+    tglUkur: fd.get('tglUkur'),
+    periode: fd.get('periode'),
+    berat: parseFloat(fd.get('berat')),
+    tinggi: parseFloat(fd.get('tinggi')),
+    lila: parseFloat(fd.get('lila')),
+    lingkarKepala: parseFloat(fd.get('lingkarKepala'))
+  };
+
+  try {
+    const res = await apiCall('simpan', { data });
+    if (res.ok) {
+      this.reset();
+      showToast('✅ ' + res.msg);
+      showPage('data');
+    } else {
+      showToast('⚠️ ' + res.msg);
+    }
+  } catch (err) {
+    showToast('❌ Gagal: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Simpan Data';
+  }
+});
+
+/* ===== Load tabel ===== */
+async function loadTable() {
+  document.getElementById('tableBody').innerHTML =
+    '<tr><td colspan="14" style="text-align:center;padding:30px;color:#94a3b8">Memuat data...</td></tr>';
+  try {
+    const res = await apiCall('list', { page: currentPage });
+    renderTable(res);
+  } catch (err) {
+    document.getElementById('tableBody').innerHTML =
+      '<tr><td colspan="14" style="text-align:center;padding:30px;color:#ef4444">Gagal memuat: ' + err.message + '</td></tr>';
+  }
+}
+
+function renderTable(res) {
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  const pag = document.getElementById('pagination');
+  tbody.innerHTML = '';
+
+  if (!res.total) {
+    empty.classList.remove('hidden');
+    pag.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  pag.classList.remove('hidden');
+
+  res.rows.forEach((d, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${(res.page - 1) * 10 + i + 1}</td>
+      <td style="white-space:nowrap">${formatDateTime(d.inputAt)}</td>
+      <td>${esc(d.nik)}</td>
+      <td><strong>${esc(d.namaAnak)}</strong></td>
+      <td>${formatDate(d.tglLahir)}</td>
+      <td><span class="badge ${d.jk === 'L' ? 'badge-l' : 'badge-p'}">${d.jk}</span></td>
+      <td>${esc(d.namaOrtu)}</td>
+      <td>${formatDate(d.tglUkur)}</td>
+      <td>${formatPeriode(d.periode)}</td>
+      <td>${d.berat}</td><td>${d.tinggi}</td><td>${d.lila}</td><td>${d.lingkarKepala}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="askDelete('${d.id}')">Hapus</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const from = (res.page - 1) * 10 + 1;
+  const to = Math.min(res.page * 10, res.total);
+  document.getElementById('pageInfo').textContent = `Menampilkan ${from}–${to} dari ${res.total} data`;
+
+  const container = document.getElementById('pageButtons');
+  container.innerHTML = '';
+
+  const makeBtn = (label, page, disabled, active) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    if (active) b.classList.add('active');
+    if (disabled) b.disabled = true;
+    if (!disabled && !active) b.onclick = () => { currentPage = page; loadTable(); };
+    container.appendChild(b);
+  };
+
+  makeBtn('‹', res.page - 1, res.page === 1, false);
+  let startPage = Math.max(1, res.page - 2);
+  let endPage = Math.min(res.totalPages, startPage + 4);
+  if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+  if (startPage > 1) {
+    makeBtn('1', 1, false, res.page === 1);
+    if (startPage > 2) container.appendChild(document.createTextNode('…'));
+  }
+  for (let p = startPage; p <= endPage; p++) makeBtn(p, p, false, p === res.page);
+  if (endPage < res.totalPages) {
+    if (endPage < res.totalPages - 1) container.appendChild(document.createTextNode('…'));
+    makeBtn(res.totalPages, res.totalPages, false, res.page === res.totalPages);
+  }
+  makeBtn('›', res.page + 1, res.page === res.totalPages, false);
+}
+
+/* ===== Hapus ===== */
+function askDelete(id) {
+  deleteTargetId = id;
+  document.getElementById('deleteModal').classList.remove('hidden');
+}
+function closeDeleteModal() {
+  deleteTargetId = null;
+  document.getElementById('deleteModal').classList.add('hidden');
+}
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+  if (!deleteTargetId) return;
+  const btn = this;
+  btn.disabled = true; btn.textContent = '⏳...';
+  try {
+    const res = await apiCall('hapus', { id: deleteTargetId });
+    closeDeleteModal();
+    showToast(res.ok ? '🗑️ ' + res.msg : '⚠️ ' + res.msg);
+    loadTable();
+  } catch (err) {
+    showToast('❌ Gagal: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Ya, Hapus';
+  }
+});
+
+/* ===== Util ===== */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+function formatDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function formatDateTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function formatPeriode(p) {
+  if (!p) return '-';
+  const [y, m] = p.split('-');
+  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${bulan[parseInt(m, 10) - 1]} ${y}`;
+}
+</script>
+</body>
+</html>
